@@ -1,6 +1,6 @@
 const Matter = require("matter-js");
 const GeomUtils = require("./geom_utils.js");
-
+const camera = require("./camera.js");
 
 const Engine = Matter.Engine,
   Render = Matter.Render,
@@ -34,7 +34,7 @@ let CENTER_Y = CANVAS_HEIGHT / 2.0;
 
 const SPAWN_POINT_OFFSET = 30;
 const SPAWN_MAX_INTEREVAL_APART = 75;
-const SPAWN_INTERVAL = 200;
+const SPAWN_INTERVAL = 1000;
 const SPAWN_HEIGHT_CUTOFF = CANVAS_HEIGHT - 50;
 
 // Should the tiles collide with one another
@@ -198,35 +198,47 @@ function spawnTiles() {
   spawnTilesAroundPolygon(points, SPAWN_POINT_OFFSET, SPAWN_MAX_INTEREVAL_APART);
 }
 
-function updatePersonPose(newPose) {
-  CURRENT_POSE.head_center = newPose.head_center;
-  CURRENT_POSE.head_radius = newPose.head_radius;
+function updatePersonPose(tfPose) {
+  const keypoints = tfPose[0].keypoints
+  
+  let jsPose = {};
+  for (var i = 0; i < keypoints.length; i++) {
+    const keypoint = keypoints[i];
+    console.log(keypoint);
+    if(keypoint.score > 0.3){
+     jsPose[keypoint.part] = Object.values(keypoint.position);
+    }
+  };
+
+  CURRENT_POSE.head_center = jsPose.nose || CURRENT_POSE.head_center;
+  CURRENT_POSE.head_radius = 10;//jsPose || CURRENT_POSE.head_radius.headRadius;
 
   // Left side
-  CURRENT_POSE.left_shoulder = newPose.left_shoulder;
-  CURRENT_POSE.left_elbow = newPose.left_elbow;
-  CURRENT_POSE.left_hand = newPose.left_hand;
-  CURRENT_POSE.left_shoulder_to_elbow_width = newPose.left_shoulder_to_elbow_width;
-  CURRENT_POSE.left_elbow_to_hand_width = newPose.left_elbow_to_hand_width;
+  CURRENT_POSE.left_shoulder = jsPose.leftShoulder || CURRENT_POSE.left_shoulder;
+  CURRENT_POSE.left_elbow = jsPose.leftElbow || CURRENT_POSE.left_elbow;
+  CURRENT_POSE.left_hand = jsPose.leftHand || CURRENT_POSE.left_hand;
+  CURRENT_POSE.left_shoulder_to_elbow_width = 10;//jsPose || CURRENT_POSE.left_shoulder_to_elbow_width.left_shoulder_to_elbow_width;
+  CURRENT_POSE.left_elbow_to_hand_width = 8;//jsPose || CURRENT_POSE.left_elbow_to_hand_width.left_elbow_to_hand_width;
 
-  CURRENT_POSE.left_hip = newPose.left_hip;
-  CURRENT_POSE.left_knee = newPose.left_knee;
-  CURRENT_POSE.left_foot = newPose.left_foot;
-  CURRENT_POSE.left_hip_to_knee_width = newPose.left_hip_to_knee_width;
-  CURRENT_POSE.left_knee_to_foot_width = newPose.left_knee_to_foot_width;
+  CURRENT_POSE.left_hip = jsPose.leftHip || CURRENT_POSE.left_hip;
+  CURRENT_POSE.left_knee = jsPose.leftKnee || CURRENT_POSE.left_knee;
+  CURRENT_POSE.left_foot = jsPose.leftFoot || CURRENT_POSE.left_foot;
+  CURRENT_POSE.left_hip_to_knee_width = 10;//jsPose || CURRENT_POSE.left_hip_to_knee_width.left_hip_to_knee_width;
+  CURRENT_POSE.left_knee_to_foot_width = 9;//jsPose || CURRENT_POSE.left_knee_to_foot_width.left_knee_to_foot_width;
 
   // Right side
-  CURRENT_POSE.right_shoulder = newPose.right_shoulder;
-  CURRENT_POSE.right_elbow = newPose.right_elbow;
-  CURRENT_POSE.right_hand = newPose.right_hand;
-  CURRENT_POSE.right_shoulder_to_elbow_width = newPose.right_shoulder_to_elbow_width;
-  CURRENT_POSE.right_elbow_to_hand_width = newPose.right_elbow_to_hand_width;
+  CURRENT_POSE.right_shoulder = jsPose.rightShoulder || CURRENT_POSE.right_shoulder;
+  CURRENT_POSE.right_elbow = jsPose.rightElbow || CURRENT_POSE.right_elbow;
+  CURRENT_POSE.right_hand = jsPose.rightHand || CURRENT_POSE.right_hand;
+  CURRENT_POSE.right_shoulder_to_elbow_width = 10;//jsPose || CURRENT_POSE.right_shoulder_to_elbow_width.right_shoulder_to_elbow_width;
+  CURRENT_POSE.right_elbow_to_hand_width = 8;//jsPose || CURRENT_POSE.right_elbow_to_hand_width.right_elbow_to_hand_width;
 
-  CURRENT_POSE.right_hip = newPose.right_hip;
-  CURRENT_POSE.right_knee = newPose.right_knee;
-  CURRENT_POSE.right_foot = newPose.right_foot;
-  CURRENT_POSE.right_hip_to_knee_width = newPose.right_hip_to_knee_width;
-  CURRENT_POSE.right_knee_to_foot_width = newPose.right_knee_to_foot_width;
+  CURRENT_POSE.right_hip = jsPose.rightHip || CURRENT_POSE.right_hip;
+  CURRENT_POSE.right_knee = jsPose.rightKnee || CURRENT_POSE.right_knee;
+  CURRENT_POSE.right_foot = jsPose.rightFoot || CURRENT_POSE.right_foot;
+  CURRENT_POSE.right_hip_to_knee_width = 10;//jsPose || CURRENT_POSE.right_hip_to_knee_width.right_hip_to_knee_width;
+  CURRENT_POSE.right_knee_to_foot_width = 9;//jsPose || CURRENT_POSE.right_knee_to_foot_width.right_knee_to_foot_width;
+  console.log("CURRENT_POSE",CURRENT_POSE);
 }
 
 function updatePersonColliders() {
@@ -297,4 +309,6 @@ function start() {
   ]);
 }
 
+console.log(camera);
 document.addEventListener("DOMContentLoaded", start);
+camera.beginEstimatingPoses(updatePersonPose);
